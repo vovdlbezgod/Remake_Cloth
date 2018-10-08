@@ -21,6 +21,9 @@ import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.widget.ImageView
+import com.example.photoeditor.PhotoEditor
+import com.example.photoeditor.PhotoEditorView
+import com.example.photoeditor.SaveSettings
 import com.example.vovdlbezgod.remake_cloth.R
 import com.example.vovdlbezgod.remake_cloth.StickerBSFragment
 import kotlinx.android.synthetic.main.activity_changing_cloth.*
@@ -40,7 +43,8 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
     private var selectedImagePathClothChangActivity: String? = null
     private val TAG = "Changing_cloth"
     private var localBitmap: Bitmap? = null
-    private var imageView: ImageView? = null
+    private var imageView: PhotoEditorView? = null
+    private var mPhotoEditor: PhotoEditor? = null
     private var mStickerBSFragment: StickerBSFragment? = null
 
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
@@ -53,6 +57,7 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_save -> {
+                saveImage()
                 return@OnNavigationItemSelectedListener true
             }
         }
@@ -77,7 +82,7 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
         try {
             mStickerBSFragment = StickerBSFragment()
             mStickerBSFragment!!.setStickerListener(this)
-            imageView = findViewById<View>(R.id.imageShow) as ImageView
+            imageView = findViewById<View>(R.id.imageShow) as PhotoEditorView
             val selectedImagePath = intent.extras!!.getString("selectedImagePath")
             getImage(this, selectedImagePath)
             //maskBitmap = mas
@@ -101,7 +106,8 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
         Thread {
             try {
                 activity.runOnUiThread {
-                    imageView!!.setImageBitmap(src)
+                    mPhotoEditor = PhotoEditor.Builder(this, imageView).build() // build photo editor sdk
+                    imageView!!.source.setImageBitmap(src)
                 }
 
             } catch (e: ExecutionException) {
@@ -110,25 +116,20 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
         }.start()
     }
 
-
-    /*private fun showSaveDialog() {
-        val builder = AlertDialog.Builder(this)
-        builder.setMessage("Are you want to exit without saving image ?")
-        builder.setPositiveButton("Save") { dialog, which -> saveImage() }
-        builder.setNegativeButton("Cancel") { dialog, which -> dialog.dismiss() }
-
-        builder.setNeutralButton("Discard") { dialog, which -> finish() }
-        builder.create().show()
-
-    }
-
     @SuppressLint("MissingPermission")
     private fun saveImage() {
         if (requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             showLoading("Saving...")
-            val file = File(Environment.getExternalStorageDirectory().toString()
-                    + File.separator + ""
-                    + System.currentTimeMillis() + ".png")
+            val mediaStorageDir = File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CameraDemo")
+            // Create a storage directory if it does not exist
+            if (!mediaStorageDir.exists()) {
+                if (!mediaStorageDir.mkdirs()) {
+                    Log.d(TAG, "Failed to create directory")
+                }
+            }
+            val file = File(mediaStorageDir.path + File.separator + ""
+                    + System.currentTimeMillis() + ".jpg")
             try {
                 file.createNewFile()
 
@@ -137,14 +138,14 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
                         .setTransparencyEnabled(true)
                         .build()
 
-                imageView.saveAsFile(file.absolutePath, saveSettings, object : PhotoEditor.OnSaveListener() {
-                    fun onSuccess(imagePath: String) {
+                mPhotoEditor!!.saveAsFile(file.absolutePath, saveSettings, object : PhotoEditor.OnSaveListener {
+                    override fun onSuccess(imagePath: String) {
                         hideLoading()
                         showSnackbar("Image Saved Successfully in $imagePath")
-                        imageView.getDrawingCache(true).setImageURI(Uri.fromFile(File(imagePath)))
+                        imageView!!.source.setImageURI(Uri.fromFile(File(imagePath)))
                     }
 
-                    fun onFailure(exception: Exception) {
+                    override fun onFailure(exception: Exception) {
                         hideLoading()
                         showSnackbar("Failed to save Image")
                     }
@@ -152,10 +153,10 @@ class changing_cloth : MediaActivity(), StickerBSFragment.StickerListener{
             } catch (e: IOException) {
                 e.printStackTrace()
                 hideLoading()
-                showSnackbar(e.message)
+                showSnackbar(e.message!!)
             }
 
         }
-    }*/
+    }
 
 }

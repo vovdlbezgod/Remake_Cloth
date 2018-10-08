@@ -11,13 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal">
-
-        <ImageView
+        <com.example.photoeditor.PhotoEditorView
             android:id="@+id/imageShow"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:srcCompat="@android:color/black" />
+            android:layout_height="wrap_content" />
     </LinearLayout>
 
     <android.support.design.widget.BottomNavigationView
